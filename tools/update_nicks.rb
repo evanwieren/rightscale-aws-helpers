@@ -32,6 +32,12 @@ def read_config(config_file, environment)
     end
 end
 
+def debug(message)
+  if @debug == true
+    puts message
+  end
+end
+
 def init(options={})
   # This is the initial connection to RightScale
   begin

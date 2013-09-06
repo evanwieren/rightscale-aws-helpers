@@ -3,19 +3,40 @@ require 'yaml'
 
 module RS_AWS_Helper
 
-	def read_config(config_file, environment)
-		raw_config = File.read(config_file)
-		@APP_CONFIG = YAML.load(raw_config)[environment]
+	class RS_AWS_Helper
+
+		# Read the configuration file for both  AWS and RS
+		def read_config(config_file, environment)
+		  begin
+		    raw_config = File.read(config_file)
+		    @APP_CONFIG = YAML.load(raw_config)[environment]
+		    debug "Read the configuration file"
+		  rescue Exception => e
+		    puts "Failed to read the configuration file"
+		    puts e.message
+		    puts e.backtrace.inspect
+		    exit 1
+	    end
+		end
+ 	end
+
 	end
 
+	class AWS_Helper
+		# TODO : SHAZBOT : Put some stuff here. 
+		# Not the right file for this stuff.
+	end
 
-	def initialize(options={})
-		begin
+	# Class the will handle the RightScale side of things.
+	# This will probably need to go into another file later
+	class RS_Helper
 
-			@rs_conn = RightScaleAPIHelper::Helper.new(account_id, email, password, format='js', version = 1.0 )
-		rescue
-			# Need to anotate that connection was not established. Need to raise an exception
-		end
+		# TODO : SHAZBOT : Need to move some code into here so that 
+		# I am not copying the same code over and over. That is bad.
+
 	end
 end
+
+
+	
 

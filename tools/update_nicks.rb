@@ -1,56 +1,51 @@
 #!/usr/bin/env ruby
 
 require 'RightScaleAPIHelper'
-require 'optparse'
 require 'json'
 require 'base64'
 require 'AWS'
 require 'yaml'
 
-def process_yaml()
+# Map of RightScale Regions to Amazon Regions. 
+# Need this or items will not work.
+@rs_to_aws_cloud_map = {
+  1 => 'us-east-1',
+  3 => 'us-west-1',
+  6 => 'us-west-2',
+  4 => 'ap-southeast-1',
+  8 => 'ap-southeast-2',
+  5 => 'ap-northeast-1',
+  7 => 'sa-east-1',
+  2 => 'eu-west-1'
+}
 
-  opts = OptionParser.new
-
-  opts.on("-y", "--yaml PATH_TO_YAML_FILE", String) do |val|
-    if File.exist?(val)
-      app_config = YAML.load_file(val)
-      @username = app_config['username']
-      @password = app_config['password']
-      @account_id = app_config['account_id']
-      if app_config['base64']
-        @base64 = true
-      end
-      AWS.config(app_config)
-    else
-      puts "YAML configuration file does not exist. file: %s\nExiting" % val
-      exit(1)
+def read_config(config_file, environment)
+  begin
+    raw_config = File.read(config_file)
+    @APP_CONFIG = YAML.load(raw_config)[environment]
+    debug "Read the configuration file"
+  rescue Exception => e
+    puts "Failed to read the configuration file"
+    puts e.message
+    puts e.backtrace.inspect
+    exit 1
     end
-  end
- 
-  # Assign Variables
-  opts.on("-u", "--username RightScaleUsername", String) {|val| @username = val }
-  opts.on("-p", "--password RightScalePassword", String) {|val| @password = val }
-  opts.on("-a", "--account_id RSAccountID", Integer) {|val| @account_id = val}
-  opts.on("--aws-key Amazon_Key", String) {|val| @aws_key = val }
-  opts.on("--aww-secret Amazon_Secret", String) {|val| @aws_secret = val}
-  opts.on("--base64[=OPT]", TrueClass) {|val| @base64 = true}
-  opts.on("-h", "--help", "Show Help|Usage Information") do
-    puts opts.to_s
-    exit(0)
-  end
-
-  opts.parse(ARGV)
-
 end
 
-
-def rs_conn()
-  if @base64
-    api_conn = RightScaleAPIHelper::Helper.new(@account_id, Base64.decode64(@username), Base64.decode64(@password), format="js", version="1.0")
-  else
-    api_conn = RightScaleAPIHelper::Helper.new(@account_id, @username, @password, format="js", version="1.0")
+def init(options={})
+  # This is the initial connection to RightScale
+  begin
+    @rs_conn = RightScaleAPIHelper::Helper.new(@APP_CONFIG[:account_id], Base64.decode64(@APP_CONFIG[:username]),
+      Base64.decode64(@APP_CONFIG[:password]), format='js' )
+    debug "Connect to RS API complete"
+  rescue Exception => e
+    puts "Failed making the connection to RightScale"
+    puts e.message
+    puts e.backtrace.inspect
+    exit(1)
   end
-  return api_conn
+  # TODO : SHAZBOT : Need to add the connector for AWS. 
+  # Working on one side at a time. 
 end
 
 def which_ec2_conn(rs_cloud_id)

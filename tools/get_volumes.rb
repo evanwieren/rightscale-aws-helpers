@@ -8,16 +8,16 @@ require 'json'
 @debug = true
 
 def read_config(config_file, environment)
-begin
-	raw_config = File.read(config_file)
-	@APP_CONFIG = YAML.load(raw_config)[environment]
-	debug "Read the configuration file"
-rescue Exception => e
-	puts "Failed to read the configuration file"
-	puts e.message
-	puts e.backtrace.inspect
-	exit 1
-	end
+	begin
+		raw_config = File.read(config_file)
+		@APP_CONFIG = YAML.load(raw_config)[environment]
+		debug "Read the configuration file"
+	rescue Exception => e
+		puts "Failed to read the configuration file"
+		puts e.message
+		puts e.backtrace.inspect
+		exit 1
+		end
 end
 
 
@@ -56,20 +56,20 @@ def get_servers
 
 		# Convert the output to json
 		server_list = JSON.parse(resp.body)
-		#server_list.each do |server|
-		#	begin
-		#		#puts server
-		#		#puts server["nickname"]
-		#		#ref =  server["href"]	
-		#		#resp =  @rs_conn.get("#{ref}/settings")
-		#		#puts "Response code: #{resp.code}"
-		#		#puts resp.body
-		#	rescue Exception => e
-		#		puts e.message
-		#		puts e.backtrace.inspect
-		#		exit 1
-		#	end
-		#end
+		server_list.each do |server|
+			begin
+				puts server
+				puts server["nickname"]
+				ref =  server["href"]	
+				resp =  @rs_conn.get("#{ref}/settings")
+				puts "Response code: #{resp.code}"
+				puts resp.body
+			rescue Exception => e
+				puts e.message
+				puts e.backtrace.inspect
+				exit 1
+			end
+		end
 	rescue Exception => e
 		puts "Error running RS command"
 		puts e.message
@@ -117,7 +117,8 @@ begin
 	# now we initiate our connections 
 	init
 
-	server_list = generic_get '/servers'
+	#server_list = generic_get '/servers'
+	get_servers
 	#server_list.each do |server|
 	#	puts server 
 	#end

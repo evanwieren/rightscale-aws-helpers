@@ -5,6 +5,7 @@ require 'yaml'
 require 'Base64'
 require 'json'
 
+
 @debug = true
 
 def read_config(config_file, environment)
@@ -47,35 +48,34 @@ def get_servers
 	begin
 
 		resp = @rs_conn.get('/servers')
-		#puts "Response code: #{resp.code}"
 
+		# 200 Success :: anything else is failure
 		unless resp.code == "200"
-			puts "Error requesting server list. Error code #{resp.code}"
-			return nil
+			#raise "Error requesting server list. Error code #{resp.code}"
+			# Not sure that I want to raise an exception. Will give back raw data.
+			return {code: resp.code, body: resp.body}
 		end
 
 		# Convert the output to json
 		server_list = JSON.parse(resp.body)
-		server_list.each do |server|
-			begin
-				puts server
-				puts server["nickname"]
-				ref =  server["href"]	
-				resp =  @rs_conn.get("#{ref}/settings")
-				puts "Response code: #{resp.code}"
-				puts resp.body
-			rescue Exception => e
-				puts e.message
-				puts e.backtrace.inspect
-				exit 1
-			end
-		end
+#		server_list.each do |server|
+#			begin
+#				puts server
+#				puts server["nickname"]
+#				ref =  server["href"]	
+#				resp =  @rs_conn.get("#{ref}/settings")
+#				puts "Response code: #{resp.code}"
+#				puts resp.body
+#			rescue Exception => e
+#				puts e.message
+#				puts e.backtrace.inspect
+#				exit 1
+#			end
+#		end
 	rescue Exception => e
-		puts "Error running RS command"
-		puts e.message
-		puts e.backtrace.inspect
+		raise e
 	end
-	return server_list
+	return {code: resp.code, body: server_list}
 end
 
 def get_volumes
@@ -118,15 +118,21 @@ begin
 	init
 
 	#server_list = generic_get '/servers'
-	get_servers
+	#get_servers
+	server_arrays = generic_get('/server_arrays')
+	count = 0
+	server_arrays.each do |array| 
+		puts "#{count} : #{array}"
+		count += 1
+	end
 	#server_list.each do |server|
 	#	puts server 
 	#end
 
-	volume_list = get_volumes
-	volume_list.each do |volume|
-		puts volume
-	end
+	#volume_list = get_volumes
+	#volume_list.each do |volume|
+	#	puts volume
+	#end
 	#puts "Listing individual machine"
 	#server_info = generic_get "https://my.rightscale.com/api/acct/44210/servers/869991001"
 	#puts "server_info is of type #{server_info.class}"

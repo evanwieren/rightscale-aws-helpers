@@ -3,8 +3,9 @@
 require 'RightScaleAPIHelper'
 require 'json'
 require 'base64'
-require 'AWS'
+#require 'AWS'
 require 'yaml'
+require_relative '../lib/rs_aws_helpers.rb'
 
 # Map of RightScale Regions to Amazon Regions. 
 # Need this or items will not work.
@@ -18,19 +19,6 @@ require 'yaml'
   7 => 'sa-east-1',
   2 => 'eu-west-1'
 }
-
-def read_config(config_file, environment)
-  begin
-    raw_config = File.read(config_file)
-    @APP_CONFIG = YAML.load(raw_config)[environment]
-    debug "Read the configuration file"
-  rescue Exception => e
-    puts "Failed to read the configuration file"
-    puts e.message
-    puts e.backtrace.inspect
-    exit 1
-    end
-end
 
 def debug(message)
   if @debug == true
@@ -83,16 +71,40 @@ end
 
 begin
 
-  process_yaml
-  @api_conn = rs_conn
+  helper = RS_AWS::Helper.new("../../config.yml", "development")
+  result = helper.get_rs_servers
+
+  unless result[:code] == '200'
+    puts "Failed to get list."
+    puts result[:body]
+    exit 1
+  end
+
+  count = 0
+  operational = 0
+  stopped = 0
+  result[:body].each do |server|
+    nick = server['nickname']
+    state = server['state']
+    if state == "operational"
+      operational += 1
+    elsif state == "stopped"
+      stopped += 1
+    end
+    puts "#{count}: #{nick} : #{state}"
+    count += 1
+  end
+
+  puts "Stopped = #{stopped}"
+  puts "Operational = #{operational}"
 
 
-  @ec2 = AWS::EC2.new # Connects to us-east-1
+#  @ec2 = AWS::EC2.new # Connects to us-east-1
 
-  resp = @api_conn.get("/servers")
-  server_list = JSON.parse(resp.body)
+#  resp = @api_conn.get("/servers")
+#  server_list = JSON.parse(resp.body)
 
-  update_servers(server_list)
+#  update_servers(server_list)
 
 
   # This is broken until I add a bunch of try and catches as the rightscale api

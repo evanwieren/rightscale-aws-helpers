@@ -99,6 +99,7 @@ def generic_get (query)
 		resp = @rs_conn.get(query)
 		unless resp.code == '200'
 			puts "Failed to run query: #{query}.\n Error code #{resp.code}"
+			puts "Body: #{resp.body}"
 			return nil
 		end
 
@@ -120,11 +121,21 @@ begin
 	#server_list = generic_get '/servers'
 	#get_servers
 	server_arrays = generic_get('/server_arrays')
-	count = 0
+	count = 1
+	icount = 1 
 	server_arrays.each do |array| 
-		puts "#{count} : #{array}"
+		#puts "#{count} : #{array['nickname']} : #{array["active_instances_count"]}"
+		array_intances = generic_get(array["href"] + "/instances")
+		array_intances.each do |instance|
+			puts "#{icount} : #{instance['nickname']} : #{instance['resource_uid']} : #{instance['cloud_id']}"
+			icount += 1
+		end
+
 		count += 1
 	end
+
+	puts "Total arrays : #{count}"
+	puts "Total servers : #{icount}"
 	#server_list.each do |server|
 	#	puts server 
 	#end

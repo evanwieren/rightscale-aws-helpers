@@ -7,7 +7,7 @@ module RS_AWS
 	class Helper
 
 		# Read the configuration file for both  AWS and RS
-		def read_config(config_file, environment)
+		def self.read_config(config_file, environment)
 		  begin
 		    raw_config = File.read(config_file)
 		    @APP_CONFIG = YAML.load(raw_config)[environment]
@@ -67,7 +67,6 @@ module RS_AWS
 				raise
 			end
 		end
-
 
 		def set_config(config)
 			@APP_CONFIG = config

@@ -53,7 +53,7 @@ begin
   end
 
   helper = RS_AWS::Helper.new(ARGV[0], ARGV[1])
-  @APP_CONFIG = helper.read_config(ARGV[0], ARGV[1])
+  @APP_CONFIG = RS_AWS::Helper.read_config(ARGV[0], ARGV[1])
   AWS.config(access_key_id: @APP_CONFIG[:access_key_id], secret_access_key: @APP_CONFIG[:secret_access_key])
   set_aws_connections
 

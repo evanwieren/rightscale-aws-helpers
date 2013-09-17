@@ -20,7 +20,7 @@ module RS_AWS
 
 		def initialize(config_file, environment)
 			begin
-				read_config(config_file, environment)
+				@APP_CONFIG = Helper.read_config(config_file, environment)
 				@rs = RS_Helper.new(@APP_CONFIG)
 				@rs.init
 			rescue
@@ -29,7 +29,7 @@ module RS_AWS
 		end
 
 		def update_config(config_file, environment)
-			read_config(config_file, environment)
+			@APP_CONFIG = Helper.read_config(config_file, environment)
 			@rs.set_config(@APP_CONFIG)
 		end
 

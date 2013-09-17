@@ -52,6 +52,9 @@ begin
   AWS.config(access_key_id: @APP_CONFIG[:access_key_id], secret_access_key: @APP_CONFIG[:secret_access_key])
   set_aws_connections
 
+  volume_tags = {}
+
+  # This should go through each region. Get the instances, and apply label to any attached devices.
   @rs_to_aws_cloud_map.each do |key, ec2|
     instances = ec2.instances
     instances.each do |instance|
@@ -60,38 +63,38 @@ begin
       instance_attachments.each do |point, attachment| 
         # Returns the volume? ec2.volume.(attachment.volu)
         puts "\t#{attachment.volume.id}"
+
+        vol_tags = {}
+
         instance.tags.each do |instance_tags|
           #value = instance.tags[key]
-          puts "#{instance_tags[0]}---#{instance_tags[1]}"
 
           # if it starts with aws skip. Reserved by amazon.
-          unless (instance_tags[0] =~ /^aws/)
+          unless (instance_tags[0] =~ /^aws/) or instance_tags[1] == nil or instance_tags[1] == ""
+            puts "#{instance_tags[0]}---#{instance_tags[1]}"
             attachment.volume.tag(instance_tags[0], value: instance_tags[1])
+            vol_tags[instance_tags[0]] = instance_tags[1]
             #ec2.tags.create(attachment.volume, key, value)
           end
         end
-        #attachment.volume.tags = instance.tags
+        volume_tags[attachment.volume.id] = vol_tags
       end
     end
   end
 
-  #   volumes = get_volumes(ec2)
-  #   volumes.each do | volume |
-  #     print "#{count} : #{volume.id} "
-  #     volume.attachments.each do |attachment|
-  #       vol_attach += 1
-  #       print attachment.instance.id
-  #     end
-  #     print "\n"
-  #     count += 1
-  #   end
-  #   snapshots = get_snapshots(ec2)
-  #   snapshots.each do |snapshot|
-  #     snapshot_count += 1
-  #     snapshot.permissions.public? ? perms = "Wide Open" : perms = "Safe"
-  #     puts "Snapshot : #{snapshot.id} : #{perms}"
-  #   end
-  # end
+  @rs_to_aws_cloud_map.each do |key, ec2|
+    snapshots = get_snapshots(ec2)
+    snapshots.each do |snapshot|
+      vol_tags =  volume_tags[snapshot.volume_id]
+      unless vol_tags == nil
+        puts "Adding tags to #{snapshot.id}"
+        vol_tags.keys.each do |key|
+          puts "\tKey : #{key}"
+          snapshot.tag(key, value: vol_tags[key] )
+        end
+      end
+    end
+  end
 
   # count = 1
   # snapshot_count = 0

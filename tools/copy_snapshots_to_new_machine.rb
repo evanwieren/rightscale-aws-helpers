@@ -5,7 +5,10 @@ require 'json'
 require 'base64'
 require 'aws-sdk'
 require 'yaml'
+require 'Time'
 require_relative '../lib/rs_aws_helpers.rb'
+
+@debug = true
 
 # Map of RightScale Regions to Amazon Regions. 
 # Need this or items will not work.
@@ -51,11 +54,12 @@ end
 # Pre: give an array of block devices
 # Post: for ebs volumes return an array of snapshots.
 def get_snapshots_from_block_array(block_devices)
+  volume_list = []
   block_devices.each do |device|
     unless device[:ebs].nil?
       volume =  @ec2.volumes[device[:ebs][:volume_id]]
-      puts volume
-
+      debug("Volume of id: #{volume.id}")
+      volume_list.push(volume)
     end
   end
 end
@@ -64,7 +68,32 @@ end
 # Post: return the snapshots for the attached ebs volumes
 def get_snapshots_from_server(aws_id, aws_region)
   device_list = get_instance_volumes(aws_id, aws_region)
+
   get_snapshots_from_block_array(device_list)
+  all_snapshots = @rs_to_aws_cloud_map[@aws_cloud_map[aws_region]].snapshots.with_owner("self")
+  debug "All the snapshots = #{all_snapshots}"
+
+  # will hold the snap
+  current_snaps = {}
+
+  # need to create an array of the newest snapshots
+  all_snapshots.each do |snap|
+    #debug("From volume: #{snap.volume_id} and snap: #{snap.id} time: #{snap.start_time}")
+    device_list.each do |volume|
+      if volume[:ebs][:volume_id] == snap.volume_id
+        if defined?(curent_snaps[snap.volume_id][1]).nil?
+          current_snaps[snap.volume_id] = [snap.id, snap.start_time]
+        elsif Time.parse(current_snaps[snap.volume_id][1]) < Time.parse(snap.start_time)
+          current_snaps[snap.volume_id] = [snap.id, snap.start_time]
+        end
+      end
+    end
+  end
+
+  current_snaps.each_key do |volume|
+    puts current_snaps[volume]
+  end
+
 end
 
 def debug(message)
@@ -106,6 +135,11 @@ begin
   @APP_CONFIG = RS_AWS::Helper.read_config(ARGV[0], ARGV[1])
   AWS.config(access_key_id: @APP_CONFIG[:access_key_id], secret_access_key: @APP_CONFIG[:secret_access_key])
   set_aws_connections
+
+  # get volumes from server
+  # get snapshots
+  # per volume get newest snapshot
+  # list snapshots
 
   get_snapshots_from_server(master_aws_id, master_aws_region)
 

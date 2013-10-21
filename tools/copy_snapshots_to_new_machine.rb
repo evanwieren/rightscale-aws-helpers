@@ -71,7 +71,6 @@ def get_snapshots_from_server(aws_id, aws_region)
 
   get_snapshots_from_block_array(device_list)
   all_snapshots = @rs_to_aws_cloud_map[@aws_cloud_map[aws_region]].snapshots.with_owner("self")
-  debug "All the snapshots = #{all_snapshots}"
 
   # will hold the snap
   current_snaps = {}
@@ -90,9 +89,13 @@ def get_snapshots_from_server(aws_id, aws_region)
     end
   end
 
+  snaplist = []
   current_snaps.each_key do |volume|
-    puts current_snaps[volume]
+    debug "Found snap #{current_snaps[volume][0]} with timestamp: #{current_snaps[volume][1]}"
+    snaplist.push(current_snaps[volume])
   end
+
+  return snaplist
 
 end
 

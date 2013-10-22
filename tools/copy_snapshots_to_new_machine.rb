@@ -1,11 +1,10 @@
 #!/usr/bin/env ruby
 
-require 'RightScaleAPIHelper'
+#require 'RightScaleAPIHelper'
 require 'json'
 require 'base64'
 require 'aws-sdk'
 require 'yaml'
-require 'Time'
 require_relative '../lib/rs_aws_helpers.rb'
 
 @debug = true
@@ -81,9 +80,9 @@ def get_snapshots_from_server(aws_id, aws_region)
     device_list.each do |volume|
       if volume[:ebs][:volume_id] == snap.volume_id
         if defined?(curent_snaps[snap.volume_id][1]).nil?
-          current_snaps[snap.volume_id] = [snap.id, snap.start_time]
+          current_snaps[snap.volume_id] = [snap.id, snap.start_time, snap]
         elsif Time.parse(current_snaps[snap.volume_id][1]) < Time.parse(snap.start_time)
-          current_snaps[snap.volume_id] = [snap.id, snap.start_time]
+          current_snaps[snap.volume_id] = [snap.id, snap.start_time, snap]
         end
       end
     end
@@ -92,11 +91,28 @@ def get_snapshots_from_server(aws_id, aws_region)
   snaplist = []
   current_snaps.each_key do |volume|
     debug "Found snap #{current_snaps[volume][0]} with timestamp: #{current_snaps[volume][1]}"
-    snaplist.push(current_snaps[volume])
+    snaplist.push(current_snaps[volume][2])
   end
 
   return snaplist
 
+end
+
+def create_volumes_from_snap(snapshots, aws_region, availability_zone)
+  ec2 = @rs_to_aws_cloud_map[@aws_cloud_map[aws_region]]
+  volumes = []
+  snapshots.each do |snap|
+    volume = snap.create_volume(availability_zone)
+    debug("Created volume with ID: #{volume.id}")
+    volumes.push(volume)
+  end
+
+  return volumes
+end
+
+def get_server_availability_zone(aws_id, aws_region)
+  ec2 = @rs_to_aws_cloud_map[@aws_cloud_map[aws_region]]
+  ec2.instances[aws_id].availability_zone
 end
 
 def debug(message)
@@ -134,18 +150,25 @@ begin
   slave_aws_region = STDIN.readline
   slave_aws_region.rstrip!
 
-  helper = RS_AWS::Helper.new(ARGV[0], ARGV[1])
   @APP_CONFIG = RS_AWS::Helper.read_config(ARGV[0], ARGV[1])
   AWS.config(access_key_id: @APP_CONFIG[:access_key_id], secret_access_key: @APP_CONFIG[:secret_access_key])
   set_aws_connections
 
-  # get volumes from server
-  # get snapshots
-  # per volume get newest snapshot
-  # list snapshots
+  snapshots = get_snapshots_from_server(master_aws_id, master_aws_region)
+  #master_aws_az = get_server_availability_zone(master_aws_id, master_aws_region)
+  #debug("AZ is #{master_aws_az}")
 
-  get_snapshots_from_server(master_aws_id, master_aws_region)
+  # now -- we need to copy the snapshot if not same region
+  # then create volumes from them and attach to server
+  # to start with, I am going to skip the copy and create volumes and attach to a node
 
+  new_volumes = create_volumes_from_snap(snapshots, master_aws_region, get_server_availability_zone(master_aws_id, master_aws_region))
+
+  # So I can create volumes from snaps. Now to add them to a machine.
+  # Steps to attach a machine
+  # 1. Get list of attached devices
+  # 2. Come up with next slot device name
+  # 3. attach disk
 
 
 

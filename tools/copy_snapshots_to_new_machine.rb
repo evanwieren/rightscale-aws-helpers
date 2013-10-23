@@ -61,6 +61,13 @@ def get_snapshots_from_block_array(block_devices)
       volume_list.push(volume)
     end
   end
+  return volume_list
+end
+
+# Pre given a server and region
+# provide a string with the next available device id /dev/sdx
+def get_next_device_name(aws_id, aws_region)
+
 end
 
 # Pre: given aws server id and region
@@ -68,7 +75,7 @@ end
 def get_snapshots_from_server(aws_id, aws_region)
   device_list = get_instance_volumes(aws_id, aws_region)
 
-  get_snapshots_from_block_array(device_list)
+  #get_snapshots_from_block_array(device_list)
   all_snapshots = @rs_to_aws_cloud_map[@aws_cloud_map[aws_region]].snapshots.with_owner("self")
 
   # will hold the snap

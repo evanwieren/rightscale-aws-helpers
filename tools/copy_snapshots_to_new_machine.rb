@@ -39,7 +39,7 @@ end
 
 # Pre: given aws server id and aws region
 # Post: return the array of block devices.
-def get_instance_volumes(aws_id, aws_region)
+def get_instance_block_devices(aws_id, aws_region)
   @ec2 = @rs_to_aws_cloud_map[@aws_cloud_map[aws_region]]
   server = @ec2.instances[aws_id]
   unless server.exists?
@@ -64,16 +64,10 @@ def get_snapshots_from_block_array(block_devices)
   return volume_list
 end
 
-# Pre given a server and region
-# provide a string with the next available device id /dev/sdx
-def get_next_device_name(aws_id, aws_region)
-
-end
-
 # Pre: given aws server id and region
 # Post: return the snapshots for the attached ebs volumes
 def get_snapshots_from_server(aws_id, aws_region)
-  device_list = get_instance_volumes(aws_id, aws_region)
+  device_list = get_instance_block_devices(aws_id, aws_region)
 
   #get_snapshots_from_block_array(device_list)
   all_snapshots = @rs_to_aws_cloud_map[@aws_cloud_map[aws_region]].snapshots.with_owner("self")
@@ -122,6 +116,40 @@ def get_server_availability_zone(aws_id, aws_region)
   ec2.instances[aws_id].availability_zone
 end
 
+def get_free_device_mapping(aws_id, aws_region)
+  block_devices = get_instance_block_devices(aws_id, aws_region)
+  alphabet = ("d".."z").to_a
+
+  debug ("Begin get_free_device_mapping function")
+
+  # This array will hold the letters that are available for sd[a..z] devices.
+  device_available = {}
+
+  # Populate the hash for the alphabet
+  alphabet.each do |letter|
+    device_available[letter] = true
+  end
+
+  block_devices.each do |device|
+    if ( device[:device_name] =~ /^\/dev\/sd/ )
+      debug (" Removing device from list #{device[:device_name][7]}" )
+      device_available[device[:device_name][7]] = false
+    end
+  end
+
+  valid_device = ""
+  alphabet.each do |letter|
+    if ( device_available[letter] )
+      valid_device = "/dev/sd" + letter
+      break
+    end
+  end
+
+  debug "The device is #{valid_device}"
+  return valid_device
+
+end
+
 def debug(message)
   if @debug == true
     puts message
@@ -133,12 +161,36 @@ def usage()
   exit! 0
 end
 
+def label_volumes(volumes, tag_name, tag_value)
+  volumes.each do |volume|
+    volume.tag(tag_name, value: tag_value)
+  end
+end
+
+def attach_volumes_to_instance(aws_id, aws_region, volumes, device)
+  debug ("Begin function: attach_volumes_to_instance")
+  device_number = 1
+  @ec2 = @rs_to_aws_cloud_map[@aws_cloud_map[aws_region]]
+  instance = @ec2.instances[aws_id]
+  volumes.each do |volume|
+    debug("Attaching #{volume.id} as #{device}#{device_number.to_s}")
+    volume.attach_to(instance, device + device_number.to_s)
+    device_number +=1
+  end
+end
+
 
 begin
+
   
-  unless ARGV.count == 2
-    usage()
-  end
+  #unless (ARGV.count == 2)
+  #  usage()
+  #end
+
+  @APP_CONFIG = RS_AWS::Helper.read_config(ARGV[0], ARGV[1])
+  AWS.config(access_key_id: @APP_CONFIG[:access_key_id], secret_access_key: @APP_CONFIG[:secret_access_key])
+  set_aws_connections
+
 
 
   printf ('Enter the master aws server id: ')
@@ -157,9 +209,6 @@ begin
   slave_aws_region = STDIN.readline
   slave_aws_region.rstrip!
 
-  @APP_CONFIG = RS_AWS::Helper.read_config(ARGV[0], ARGV[1])
-  AWS.config(access_key_id: @APP_CONFIG[:access_key_id], secret_access_key: @APP_CONFIG[:secret_access_key])
-  set_aws_connections
 
   snapshots = get_snapshots_from_server(master_aws_id, master_aws_region)
   #master_aws_az = get_server_availability_zone(master_aws_id, master_aws_region)
@@ -171,12 +220,14 @@ begin
 
   new_volumes = create_volumes_from_snap(snapshots, master_aws_region, get_server_availability_zone(master_aws_id, master_aws_region))
 
-  # So I can create volumes from snaps. Now to add them to a machine.
-  # Steps to attach a machine
   # 1. Get list of attached devices
   # 2. Come up with next slot device name
   # 3. attach disk
 
+  label_volumes(new_volumes, "Name", "ERIC WAS HERE")
+
+
+  attach_volumes_to_instance(slave_aws_id, slave_aws_region, new_volumes, get_free_device_mapping(slave_aws_id,slave_aws_region))
 
 
 

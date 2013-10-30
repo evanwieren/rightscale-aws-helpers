@@ -52,7 +52,7 @@ end
 
 # Pre: give an array of block devices
 # Post: for ebs volumes return an array of snapshots.
-def get_snapshots_from_block_array(block_devices)
+def get_volumes_from_block_array(block_devices)
   volume_list = []
   block_devices.each do |device|
     unless device[:ebs].nil?
@@ -89,13 +89,13 @@ def get_snapshots_from_server(aws_id, aws_region)
     end
   end
 
-  snaplist = []
+  snapshots = []
   current_snaps.each_key do |volume|
     debug "Found snap #{current_snaps[volume][0]} with timestamp: #{current_snaps[volume][1]}"
-    snaplist.push(current_snaps[volume][2])
+    snapshots.push(current_snaps[volume][2])
   end
 
-  return snaplist
+  return snapshots
 
 end
 
@@ -179,6 +179,16 @@ def attach_volumes_to_instance(aws_id, aws_region, volumes, device)
   end
 end
 
+# Just so I do not have to repeat this over and over like I already have.
+def get_aws_conn(aws_region)
+  @rs_to_aws_cloud_map[@aws_cloud_map[aws_region]]
+end
+
+# Should return list of snapshot info
+# Given array of snapshots, from_region, and to_region
+def copy_snapshots_between_regions(snapshots, from_region, to_region)
+
+end
 
 begin
 

@@ -40,7 +40,7 @@ end
 # Pre: given aws server id and aws region
 # Post: return the array of block devices.
 def get_instance_block_devices(aws_id, aws_region)
-  @ec2 = @rs_to_aws_cloud_map[@aws_cloud_map[aws_region]]
+  @ec2 = get_aws_conn(aws_region)
   server = @ec2.instances[aws_id]
   unless server.exists?
     puts "Server #{aws_id} does not exist.\nExiting..."
@@ -70,7 +70,7 @@ def get_snapshots_from_server(aws_id, aws_region)
   device_list = get_instance_block_devices(aws_id, aws_region)
 
   #get_snapshots_from_block_array(device_list)
-  all_snapshots = @rs_to_aws_cloud_map[@aws_cloud_map[aws_region]].snapshots.with_owner("self")
+  all_snapshots = get_aws_conn(aws_region).snapshots.with_owner("self")
 
   # will hold the snap
   current_snaps = {}
@@ -111,7 +111,7 @@ def create_volumes_from_snap(snapshots, aws_region, availability_zone)
 end
 
 def get_server_availability_zone(aws_id, aws_region)
-  ec2 = @rs_to_aws_cloud_map[@aws_cloud_map[aws_region]]
+  ec2 = get_aws_conn(aws_region)
   ec2.instances[aws_id].availability_zone
 end
 
@@ -169,7 +169,7 @@ end
 def attach_volumes_to_instance(aws_id, aws_region, volumes, device)
   debug ("Begin function: attach_volumes_to_instance")
   device_number = 1
-  @ec2 = @rs_to_aws_cloud_map[@aws_cloud_map[aws_region]]
+  @ec2 = get_aws_conn(aws_region)
   instance = @ec2.instances[aws_id]
   volumes.each do |volume|
     debug("Attaching #{volume.id} as #{device}#{device_number.to_s}")
@@ -180,11 +180,16 @@ end
 
 # Just so I do not have to repeat this over and over like I already have.
 def get_aws_conn(aws_region)
-  @rs_to_aws_cloud_map[@aws_cloud_map[aws_region]]
+  ec2conn = @rs_to_aws_cloud_map[@aws_cloud_map[aws_region]]
+  if ec2conn.nil? or ec2conn == ""
+    raise("'#{aws_region}' is not a valid aws region.")
+  end
+  return ec2conn
 end
 
 # Should return list of snapshot info
 # Given array of snapshots, from_region, and to_region
+# Post = this will return the snapshot objects.
 def copy_snapshots_between_regions(snapshots, from_region, to_region)
   if from_region == to_region
     raise('Unable to copy snapshot to same region')
@@ -194,9 +199,9 @@ def copy_snapshots_between_regions(snapshots, from_region, to_region)
   ec2 = get_aws_conn(to_region)
   new_snapshots = []
   snapshots.each do |snapshot|
-    new_snapshot_id =  ec2.client.copy_snapshot({source_region:  from_region, source_snapshot_id: snapshot.id})
+    new_snapshot_id =  ec2.client.copy_snapshot({source_region:  from_region, source_snapshot_id: snapshot.id})[:snapshot_id]
     debug("New snaphot_id is #{new_snapshot_id}")
-    new_snapshots.push(new_snapshot_id)
+    new_snapshots.push(ec2.snapshots[new_snapshot_id])
   end
   debug('End copy_snapshots_between_regions function')
   return new_snapshots

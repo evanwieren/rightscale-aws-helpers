@@ -100,7 +100,6 @@ def get_snapshots_from_server(aws_id, aws_region)
 end
 
 def create_volumes_from_snap(snapshots, aws_region, availability_zone)
-  ec2 = @rs_to_aws_cloud_map[@aws_cloud_map[aws_region]]
   volumes = []
   snapshots.each do |snap|
     volume = snap.create_volume(availability_zone)
@@ -187,7 +186,20 @@ end
 # Should return list of snapshot info
 # Given array of snapshots, from_region, and to_region
 def copy_snapshots_between_regions(snapshots, from_region, to_region)
+  if from_region == to_region
+    raise('Unable to copy snapshot to same region')
+  end
 
+  debug('Begin copy_snapshots_between_regions function')
+  ec2 = get_aws_conn(to_region)
+  new_snapshots = []
+  snapshots.each do |snapshot|
+    new_snapshot_id =  ec2.client.copy_snapshot({source_region:  from_region, source_snapshot_id: snapshot.id})
+    debug("New snaphot_id is #{new_snapshot_id}")
+    new_snapshots.push(new_snapshot_id)
+  end
+  debug('End copy_snapshots_between_regions function')
+  return new_snapshots
 end
 
 begin
@@ -221,23 +233,32 @@ begin
 
 
   snapshots = get_snapshots_from_server(master_aws_id, master_aws_region)
-  #master_aws_az = get_server_availability_zone(master_aws_id, master_aws_region)
-  #debug("AZ is #{master_aws_az}")
+  new_snap_ids = copy_snapshots_between_regions(snapshots, master_aws_region, slave_aws_region)
 
-  # now -- we need to copy the snapshot if not same region
-  # then create volumes from them and attach to server
-  # to start with, I am going to skip the copy and create volumes and attach to a node
-
-  new_volumes = create_volumes_from_snap(snapshots, master_aws_region, get_server_availability_zone(master_aws_id, master_aws_region))
-
-  # 1. Get list of attached devices
-  # 2. Come up with next slot device name
-  # 3. attach disk
-
-  label_volumes(new_volumes, "Name", "ERIC WAS HERE")
-
-
-  attach_volumes_to_instance(slave_aws_id, slave_aws_region, new_volumes, get_free_device_mapping(slave_aws_id,slave_aws_region))
+  new_snap_ids.each do |snap_id|
+    puts "New snapshot id is : #{snap_id}"
+  end
+  ##master_aws_az = get_server_availability_zone(master_aws_id, master_aws_region)
+  ##debug("AZ is #{master_aws_az}")
+  #
+  ## now -- we need to copy the snapshot if not same region
+  ## then create volumes from them and attach to server
+  ## to start with, I am going to skip the copy and create volumes and attach to a node
+  #
+  #
+  ## need to change some of this. The functionality is going to change due to the copy between region function. It only
+  ## returns the id of the snap, and not the snapshot. Therefore, need to get the ids, and then pass that along, or make
+  ## a function that will create new volumes based upon a list of ids and not of snapshots.
+  #new_volumes = create_volumes_from_snap(snapshots, master_aws_region, get_server_availability_zone(master_aws_id, master_aws_region))
+  #
+  ## 1. Get list of attached devices
+  ## 2. Come up with next slot device name
+  ## 3. attach disk
+  #
+  #label_volumes(new_volumes, "Name", "ERIC WAS HERE")
+  #
+  #
+  #attach_volumes_to_instance(slave_aws_id, slave_aws_region, new_volumes, get_free_device_mapping(slave_aws_id,slave_aws_region))
 
 
 

@@ -238,7 +238,26 @@ begin
 
 
   snapshots = get_snapshots_from_server(master_aws_id, master_aws_region)
-  new_snap_ids = copy_snapshots_between_regions(snapshots, master_aws_region, slave_aws_region)
+  new_snapshots = copy_snapshots_between_regions(snapshots, master_aws_region, slave_aws_region)
+
+  #snapshots_completed = false
+  #
+  #:pending
+  #:completed
+  #:error
+  temp_snapshot_list = new_snapshots.clone
+  until temp_snapshot_list.empty? do
+    temp_snapshot_list.reject! {|snapshot| snapshot.status == :completed}
+    debug "There are #{temp_snapshot_list.length} snapshots still copying."
+    temp_snapshot_list.each do |snapshot|
+      if snapshot.status == :error
+        raise "Snapshot snapshot.id has a status of #{snapshot.status}"
+      end
+    end
+    sleep(30)
+
+  end
+
 
   new_snap_ids.each do |snap_id|
     puts "New snapshot id is : #{snap_id}"

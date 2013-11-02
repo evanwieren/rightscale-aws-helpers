@@ -251,7 +251,7 @@ begin
     debug "There are #{temp_snapshot_list.length} snapshots still copying."
     temp_snapshot_list.each do |snapshot|
       if snapshot.status == :error
-        raise "Snapshot snapshot.id has a status of #{snapshot.status}"
+        raise "At least on snapshot is in error state. Snapshot #{snapshot.id} has a status of #{snapshot.status}"
       end
     end
     sleep(30)

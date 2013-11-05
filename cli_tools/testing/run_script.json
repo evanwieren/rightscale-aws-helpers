@@ -1,0 +1,4 @@
+{
+  "server_array[right_script_href]": "https://my.rightscale.com/api/acct/12345/right_scripts/123456",
+  "server_array[server_template_hrefs]": "https://my.rightscale.com/api/acct/12345/server_templates/123456789"
+}

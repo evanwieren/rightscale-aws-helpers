@@ -1,0 +1,17 @@
+{
+  "server[nickname]": "API_CREATED",
+  "server[ec2_ssh_key_href]": "https://my.rightscale.com/acct/12345/clouds/1/ec2_ssh_keys/123456789",
+  "server[ec2_security_groups_href]": "https://my.rightscale.com/acct/12345/clouds/1/ec2_security_groups/123456789",
+  "server[deployment_href]": "https://my.rightscale.com/api/acct/12345/deployments/123456789",
+  "server[ec2_image_href]": "",
+  "server[multi_cloud_image_href]": "https://my.rightscale.com/acct/12345/multi_cloud_images/123456789",
+  "server[instance_type]": "m1.small",
+  "server[ec2_user_data]": "",
+  "server[ec2_elastic_ip_href]": "",
+  "server[associate_eip_at_launch]": "",
+  "server[ec2_availability_zone]": "",
+  "server[pricing]": "on_demand",
+  "server[max_spot_price]": "",
+  "server[server_template_href]": "https://my.rightscale.com/api/acct/12345/ec2_server_templates/123456789",
+  "cloud_id": "3"
+}

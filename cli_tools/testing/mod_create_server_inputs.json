@@ -1,0 +1,61 @@
+{
+  "cloud_id":"3",
+  "server": [
+    {
+      "value": "API_CREATED",
+      "name": "nickname"
+    },
+    {
+      "value": "https://my.rightscale.com/acct/12345/clouds/3/ec2_ssh_keys/123456789",
+      "name": "ec2_ssh_key_href"
+    },
+    {
+      "value": "https://my.rightscale.com/acct/12345/clouds/3/ec2_security_groups/123456789",
+      "name": "ec2_security_groups_href"
+    },
+    {
+      "value": "https://my.rightscale.com/api/acct/12345/deployments/123456789",
+      "name": "deployment_href"
+    },
+    {
+      "value": "",
+      "name": "ec2_image_href"
+    },
+    {
+      "value": "https://my.rightscale.com/acct/12345/multi_cloud_images/123456789",
+      "name": "multi_cloud_image_href"
+    },
+    {
+      "value": "m1.small",
+      "name": "instance_type"
+    },
+    {
+      "value": "",
+      "name": "ec2_user_data"
+    },
+    {
+      "value": "",
+      "name": "ec2_elastic_ip_href"
+    },
+    {
+      "value": "",
+      "name": "associate_eip_at_launch"
+    },
+    {
+      "value": "",
+      "name": "ec2_availability_zone"
+    },
+    {
+      "value": "on_demand",
+      "name": "pricing"
+    },
+    {
+      "value": "",
+      "name": "max_spot_price"
+    },
+    {
+      "value": "https://my.rightscale.com/api/acct/12345/ec2_server_templates/123456789"
+      "name": "server_template_href"
+    }
+  ]
+}

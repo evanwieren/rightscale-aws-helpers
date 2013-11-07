@@ -8,6 +8,27 @@ require 'aws-sdk'
 require 'yaml'
 require "../rs_server_tools"
 
+@debug = true
+
+def debug(message)
+  if @debug == true
+    puts message
+  end
+end
+
+def read_config(config_file, environment)
+  begin
+    raw_config = File.read(config_file)
+    @APP_CONFIG = YAML.load(raw_config)[environment]
+    debug "Read the configuration file"
+  rescue Exception => e
+    puts "Failed to read the configuration file"
+    puts e.message
+    puts e.backtrace.inspect
+    exit 1
+  end
+end
+
 # For now this works, but need to rework the module to support a configuration
 # method that is similar to what Amazon uses
 def process_yaml()
@@ -59,10 +80,13 @@ end
 
 
 def rs_conn()
-  if @base64
-    api_conn = RightScaleAPIHelper::Helper.new(@account_id, Base64.decode64(@username), Base64.decode64(@password), format="js", version="1.0")
+  if @APP_CONFIG[:base64]
+    api_conn = RightScaleAPIHelper::Helper.new(@APP_CONFIG[:account_id], Base64.decode64(@APP_CONFIG[:username]),
+                                               Base64.decode64(@APP_CONFIG[:password]), format='js' )
   else
-    api_conn = RightScaleAPIHelper::Helper.new(@account_id, @username, @password, format="js", version="1.0")
+    debug ("Must be base64 encrypted password")
+    exit(1)
+    #api_conn = RightScaleAPIHelper::Helper.new(@account_id, @username, @password, format="js", version="1.0")
   end
   return api_conn
 end
@@ -70,12 +94,13 @@ end
 begin
   if __FILE__ == $0
     begin
-      process_yaml
+      #process_yaml
+      read_config(ARGV[0], ARGV[1])
       rs_api = rs_conn
 
       rs_tools = RSServerTools.new
 
-      server_inputs = rs_tools.read_server_inputs(rs_api, @server_id)
+      server_inputs = rs_tools.read_server_inputs(rs_api, ARGV[2])
 
       output = {}
       #puts server_inputs.class

@@ -91,7 +91,16 @@ def rs_conn()
   return api_conn
 end
 
+def usage()
+  puts "Usage: #{__FILE__} <path to config.yml> <environment> <rightscale_id>"
+  exit! 0
+end
+
 begin
+  unless ARGV.count == e
+    usage()
+  end
+
   if __FILE__ == $0
     begin
       #process_yaml

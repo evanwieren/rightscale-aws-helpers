@@ -8,10 +8,9 @@ require 'aws-sdk'
 require 'yaml'
 require "../rs_server_tools"
 
-@debug = true
 
 def debug(message)
-  if @debug == true
+  if ENV["DEBUG"] == '1'
     puts message
   end
 end
@@ -78,7 +77,6 @@ def process_yaml()
 
 end
 
-
 def rs_conn()
   if @APP_CONFIG[:base64]
     api_conn = RightScaleAPIHelper::Helper.new(@APP_CONFIG[:account_id], Base64.decode64(@APP_CONFIG[:username]),
@@ -97,7 +95,7 @@ def usage()
 end
 
 begin
-  unless ARGV.count == e
+  unless ARGV.count == 3
     usage()
   end
 
